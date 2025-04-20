@@ -5,6 +5,7 @@ extends Node2D
 @onready var file_dialog = %FileDialog
 @onready var canvas_layer: CanvasLayer = $CanvasLayer
 const NOTICE = preload("res://Scenes/notice.tscn")
+var NoticeList = []
 
 var current_file: String;
 var current_dir: String = "/";
@@ -126,14 +127,27 @@ func copy_if_not_exist(user_path: String, res_path: String, file: String) -> voi
 
 func warn(notice: String) -> void:
 	var node = NOTICE.instantiate()
-
+	for i in range(NoticeList.size()):
+		if (is_instance_valid(NoticeList[i])):
+			NoticeList[i].set_position(NoticeList[i].position + Vector2(0,100))
+	var t = NoticeList.size()
+	NoticeList.append(node)
 	canvas_layer.add_child(node)
 
 	node.set_notice(notice)
-
+	
 	get_tree().create_timer(5).timeout.connect(func():
-		node.queue_free()
+		if (NoticeList.size() > t):
+			NoticeList.remove_at(t)
+		if (is_instance_valid(node) and !node.is_queued_for_deletion()):
+			node.queue_free()
 	)
+	
+func remove_all_notice() -> void:
+	while NoticeList.size():
+		if (is_instance_valid(NoticeList[0]) and !NoticeList[0].is_queued_for_deletion()):
+			NoticeList[0].queue_free()
+		NoticeList.remove_at(0)
 
 func open_file(path: String) -> void:
 	LuaSingleton.setup_discord_sdk("Editing " + path.split("/")[-1], "In " + current_dir.split("/")[-1])
