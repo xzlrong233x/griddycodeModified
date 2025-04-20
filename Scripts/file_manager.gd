@@ -49,9 +49,20 @@ func _ready():
 	path = path[0].replace("\n", "")
 
 	if args.size() > 0:
-		if args[0] != ".":
-			current_file = path + "/" + args[0]
-		current_dir = path
+		if running_on_gaming_os:
+			if DirAccess.dir_exists_absolute(args[0]):
+				current_dir = args[0]
+			elif FileAccess.file_exists(args[0]):
+				var l = []
+				OS.execute("cmd",["/c","cd /d "+args[0]+"&cd"],l)
+				current_dir = l[0].replace("\n", "").replace("\r", "")
+				current_file = args[0]
+			else:
+				current_dir = path
+		else: 
+			if args[0] != ".":
+				current_file = path + "/" + args[0]
+			current_dir = path
 
 	var is_cli = args.size() > 0
 	print("INFO: Running inside CLI mode: ", is_cli)
@@ -108,6 +119,7 @@ func copy_if_not_exist(user_path: String, res_path: String, file: String) -> voi
 
 	var path = "user://" + user_path + "/" + file;
 	var current_path = "res://Lua/" + res_path + "/" + file;
+	if FileAccess.file_exists(path): return
 
 	DirAccess.remove_absolute(path)
 	copy_from_res(current_path, path)
