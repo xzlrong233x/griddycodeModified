@@ -170,11 +170,14 @@ func _notification(what):
 		}
 
 		save_data(save_dict)
-		Fs.save(current_file, Code.text)
+		if Code.file_modified: Fs.save(current_file, Code.text)
 
 		get_tree().quit()
 	if what == MainLoop.NOTIFICATION_APPLICATION_FOCUS_OUT:
-		Fs.save(current_file, Code.text)
+		if Code.file_modified: Fs.save(current_file, Code.text)
+		# if you don't change file it will not save it, 
+		#	to avoid save the file that you don't want save
+		#	like image file.
 		# ^^ you usually defocus when you want to run the code, so saving is needed
 
 func save_data(dict: Dictionary):
