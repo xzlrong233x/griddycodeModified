@@ -206,9 +206,9 @@ var settings: Array = [
 	{
 		"property": "music",
 		"display": "Music",
-		"options": [],
+		"options": [{"display":"None","value":"None"},{"display":"Random","value":"Random"}],
 		"icon": "󰝚",
-		"value": false,
+		"value": 0,
 	},
 	{
 		"property": "music_volume",
@@ -353,7 +353,7 @@ func handle_internal_setting_change(property: String, value: Variant) -> void:
 		toggle_shader(VHS_AND_CRT, value)
 	# MUSIC
 	if p == "music":
-		Music.set_enabled(value)
+		Music.set_choice(Music.song_settings()[value])
 	if p == "music_volume":
 		Music.set_volume(value)
 	if p == "music_move_intensity":

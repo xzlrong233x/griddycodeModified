@@ -129,8 +129,9 @@ func toggle(node: Object, apply_background: bool = true, factor: float = (18 * 7
 			future_pos.x += 700
 			future_pos.y += 500
 		if node.name == "Settings":
+			Music.try_add_item_to_setting(node);
 			future_pos.x += 200
-			future_pos.y += 300
+			future_pos.y += 350
 		if node.name == "Comments":
 			future_pos.x += 200
 			future_pos.y += 300
