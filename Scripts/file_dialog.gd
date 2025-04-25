@@ -20,20 +20,33 @@ var erased: bool
 var max_coincidence: Array = []
 var coincidence: Array = []
 
+var isHighestFakeDir: bool = false
+# if this is true, it will change logic in some functions
+
 var zoom: Vector2;
 
 var active: bool = false;
 signal ui_close
 
-func change_dir(path) -> void:
+func change_dir(path, no_change: bool=false) -> void:
 	query = ""
 	if !dir: dir = DirAccess.open(path)
 	#dir.include_hidden = true
 	# WARNING: this will heavily affect performance if de-commented
+	
+	if isHighestFakeDir:
+		dir = DirAccess.open(path)
+		isHighestFakeDir = false
 
-	dirs = [".."];
-	dirs.append_array(dir.get_directories())
-	dirs.append_array(dir.get_files())
+	if OS.get_name() == "Windows" and path == ".." and no_change:
+		dirs = []
+		for i in range(DirAccess.get_drive_count()):
+			dirs.append(DirAccess.get_drive_name(i)+"\\")
+		isHighestFakeDir = true
+	else:
+		dirs = [".."];
+		dirs.append_array(dir.get_directories())
+		dirs.append_array(dir.get_files())
 
 	shortened_dirs = []
 	for dir_ in dirs:
@@ -122,7 +135,7 @@ func show_item(index: int) -> void:
 	else:
 		push_bgcolor(Color(0, 0, 0, 0))  # Reset background color if not selected
 
-	var is_dir = dir.get_directories().find(item) != -1
+	var is_dir = dir.get_directories().find(item) != -1 or isHighestFakeDir
 
 	if item == "..":
 		push_color(LuaSingleton.gui.font_color)
@@ -182,8 +195,9 @@ func handle_enter_key() -> void:
 		ui_close.emit()
 	else:
 		selected_index = 0;
+		var old_dir = DirAccess.open(dir.get_current_dir())
 		dir.change_dir(item)
-		change_dir(item)
+		change_dir(item, old_dir.get_current_dir() == dir.get_current_dir())
 	update_ui()
 
 func make_bold(string: String, indexes: Array) -> String:
