@@ -112,6 +112,7 @@ func update_ui() -> void:
 func show_items() -> void:
 	for i in range(len(bbcode_dirs)):
 		show_item(i)
+	if active: %Cam.focus_on(Vector2(gp().x, global_position.y + get_paragraph_offset(selected_index)), zoom)
 
 func show_item(index: int) -> void:
 	var item = dirs[index]
@@ -149,8 +150,6 @@ func show_item(index: int) -> void:
 		append_text(" %s\n" % [ filename ])
 	else:
 		append_text(" %s.%s\n" % [ filename, bbcode_item.split(".")[1] ])
-
-	if active: %Cam.focus_on(Vector2(gp().x, global_position.y + (selected_index * 23)), zoom)
 
 # i gave up at that point, sorry for what you're about to witness
 func is_selected(item: String) -> bool:

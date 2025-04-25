@@ -4,7 +4,7 @@
 class_name Camera
 extends Camera2D
 
-@export var transition_speed: float = 1.0
+@export var transition_speed: float = 1
 @onready var code = %Code
 
 var max_zoom = Vector2(10.0, 10.0);
@@ -33,7 +33,13 @@ func get_font_metrics() -> Vector2:
 
 
 const SCALE = 7.0;
+var _tween:Tween = null
 
+func create_static_tween():
+	if _tween:
+		_tween.kill()
+	_tween = create_tween()
+	return _tween
 
 func _process(delta: float) -> void:
 	d += delta;

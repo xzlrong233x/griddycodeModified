@@ -135,6 +135,9 @@ func toggle(node: Object, apply_background: bool = true, factor: float = (18 * 7
 		if node.name == "Comments":
 			future_pos.x += 200
 			future_pos.y += 300
+		if node.name == "FileDialog":
+			future_pos.x += 100
+			future_pos.y += node.get_paragraph_offset(node.selected_index)
 
 		%Cam.focus_on(future_pos, node.zoom if ("zoom" in node) else Vector2(1,1))
 		code.release_focus()
