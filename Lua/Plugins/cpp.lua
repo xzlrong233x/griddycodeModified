@@ -153,36 +153,180 @@ highlight_region("\"", "\"", "string")
 highlight_region("'", "'", "string")
 
 --- Comments
-add_comment("//", "", "comments", true)
-add_comment("/*", "*/", "comments", false)
+highlight_region("//", "", "comments", true)
+highlight_region("/*", "*/", "comments", false)
 
---- Autocomplete
+--- Added functions
 
-function detect_functions(content)
-    local functionNames = {}
-
-    for line in content:gmatch("[^\r\n]+") do
-        -- Match function declarations
-        local functionName = line:match("%s*([%w_:]+)%s+[%w_:]+%s*%([^%)]*%)%s*%{?")
-        if functionName then
-            table.insert(functionNames, functionName)
-        end
+function make_iter_table(iter)
+    local t = {}
+    for i in iter do
+        table.insert(t,i)
     end
-
-    return functionNames
+    return t
 end
 
-function detect_variables(content)
-    local variable_names = {}
-    local lines = content:gmatch("[^\r\n]+")
+function extand(orgin_table,added_table)
+    for key, value in pairs(added_table) do
+        table.insert(orgin_table,value)
+    end
+end
 
-    for line in lines do
-        -- Match variable declarations
-        local variable = line:match("%s*([%w_:]+)%s+[%w_:]+%s*[=;%(%),]")
-        if variable then
-            table.insert(variable_names, variable)
+--- Autocomplete
+--- also have bug
+function detect_functions(content, line, column)
+    local functionNames = {}
+    functionNames[0] = {}
+    local tier = 0
+    local lindex = 0
+    local end_list = {}
+    local sel_tier = 0
+    for lin in content:gmatch("[^\r\n]+") do
+        -- Match function declarations
+        local resultTyp,functionName = lin:match("%s*([%w_:]+)%s+([%w_:]+)%s*%([^%)]*%)%s*%{?")
+        if functionName then
+            table.insert(functionNames[tier], functionName)
+        end
+        for restype, value in lin:gmatch("%s*([%w_:]+)%s+([%w_:]+)%s*%(%)%s*;") do
+            if (value and restype) then
+                table.insert(functionNames[tier], functionName)
+            end
+        end
+        if lin:find("{") then
+            tier = tier + 1
+        end
+        if lin:find("}") then
+            tier = tier - 1
+            if tier < 0 then
+                tier = 0
+            end
+        end
+        if lindex == line then
+            sel_tier = tier
+            break
+        end
+        lindex = lindex + 1
+    end
+
+    for index, value in pairs(functionNames) do
+        if index <= sel_tier then
+            extand(end_list,value)
         end
     end
 
-    return variable_names
+    return end_list
+end
+
+KeywordList = {"struct","class","return","continue","break","else","if"}
+VarTypeList = {"long","int","char","short","float","double","bool","unsigned"}
+WellList = {"define","include"}
+
+function detect_variables(content, line, column)
+    local variable_names = {}
+    variable_names[0] = {}
+    local end_list = {}
+    local temvars = {}
+    local block_list = {}
+    local lines = content:gmatch("[^\r\n]+")
+    local lindex = 0
+    local tier = 0
+    local sel_tier = 0
+    for lin in lines do
+        lin = lin:gsub("[%*&]","")
+        local orgin_lin = lin
+        lin = lin:gsub([[%b""]],""):gsub([[%b'']],""):gsub([[//.*]],""):gsub([[/%*.*%*/]],"")
+        -- Match variable declarations
+        local vt = lin:gsub('for ',''):gmatch("[/t%s]*([%w_:]+)%s+([%w_:,%(%)%{%}%s]+)%s*[=;]")
+        for typ,var in vt do
+            if (typ and var) then
+                var = trim(var)
+                if var:find("%(") and (var:find("%(%)") or var:match("[/t%s]*([%w_:]+)%s+([%w_:]+)%s*[=;]")) then
+                    goto continue
+                end
+                for _,typee in pairs(KeywordList) do
+                    if typee == typ then
+                        if typee ~= "auto" then
+                            goto continue
+                        else
+                        end
+                    end
+                end
+                local removed_var = var:gsub("%b()",""):gsub("%b{}",""):gsub("%b[]",""):gsub("%s","")
+                if lin:find("for") and lin:find("for") < lin:find(var) then
+                    extand(block_list,splitstr(removed_var,','))
+                    -- print(removed_var)
+                    goto continue
+                end
+                extand(temvars,splitstr(removed_var,','))
+            end
+            ::continue::
+        end
+        local cas_sa = lin:match("class%s+([%w_]+)%s*{")
+        if cas_sa then
+            table.insert(temvars,cas_sa)
+        end
+        local well_define = lin:match("#define ([%w_:]+) [^\r\n]+")
+        if well_define then
+            table.insert(temvars,well_define)
+            --print(well_define)
+        end
+        if lin:find("{") then
+            extand(variable_names[tier],temvars)
+            tier = tier + 1
+            temvars = {}
+            variable_names[tier] = {}
+            extand(temvars,block_list)
+            block_list = {}
+            if lin:find("%(") and lin:match("%(([^%)]*)%)") then
+                local func_vars = lin:match("%(([^%)]*)%)")
+                if not func_vars:find(";") then
+                    for typ,val in func_vars:gmatch("[%s]*([%w_:]+)%s+([%w_:]+)%s*[=,]?") do
+                        table.insert(temvars,val)
+                    end
+                end
+            end
+        end
+        if lindex == line then
+            if lin:find("^#") and not (lin:find(" ") and lin:find(" ") < column) then
+                return WellList
+            end
+            if lin:find("^#include ") and lin:find('["<]') >= column and lin:find('[">]') < column then
+                -- TODO - read default include folder
+            end
+            string.
+            sel_tier = tier
+            if lin:find("{") and lin:find("{") > column then
+                sel_tier = tier - 1
+            end
+            extand(variable_names[sel_tier],temvars)
+            break
+        end
+        if lin:find('}') then
+            temvars = {}
+            tier = tier - 1
+            if tier < 0 then
+                tier = 0
+            end
+        end
+        lindex = lindex + 1
+    end
+
+    --[[print("tier",sel_tier)
+            for index, value in pairs(variable_names) do
+                print(index," -> ")
+                for _, vv in ipairs(value) do
+                    print(vv)
+                end
+            end]]
+
+    for index, value in pairs(variable_names) do
+        if index <= sel_tier then
+            extand(end_list,value)
+        end
+    end
+
+    extand(end_list,VarTypeList)
+    extand(end_list,KeywordList)
+
+    return end_list
 end
