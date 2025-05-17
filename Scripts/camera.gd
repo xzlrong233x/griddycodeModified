@@ -19,6 +19,7 @@ var shake_strength: float = 15.0;
 var d := 0.0;
 var radius := 4.0
 var speed := 2.0
+var else_scale := 1.0
 
 func _ready() -> void:
 	limit_right = code.size.x
@@ -61,6 +62,7 @@ func _process(delta: float) -> void:
 	target_zoom = max_zoom.x - target_zoom;
 
 	var final_zoom = clamp(Vector2(target_zoom, target_zoom), min_zoom, max_zoom);
+	final_zoom = clamp(final_zoom * else_scale, min_zoom, max_zoom)
 	var char_size: Vector2 = get_font_metrics();
 	var gp = code.get_caret_draw_pos();
 

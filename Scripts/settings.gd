@@ -124,6 +124,7 @@ func toggle(node: Object, apply_background: bool = true, factor: float = (18 * 7
 		%Cam.focus_die()
 		if !node is FileDialogType:
 			code.grab_focus()
+		%Cam.else_scale = 1.0
 	else:
 		if node.name == "Info":
 			future_pos.x += 700
@@ -188,6 +189,14 @@ func _on_file_dialog_ui_close():
 
 
 # MISC
+
+func _input(event):
+	if !(event is InputEventMouseButton): return
+	var key_event = event as InputEventMouseButton
+	if key_event.button_index == MOUSE_BUTTON_WHEEL_UP:
+		%Cam.else_scale *= 1.1
+	elif key_event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+		%Cam.else_scale /= 1.1
 
 func get_longest_line(lines: Array = text.split("\n")) -> String:
 	var longestLine := ""
