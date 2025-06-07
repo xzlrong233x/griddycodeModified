@@ -1,4 +1,4 @@
-[gd_scene load_steps=20 format=3 uid="uid://bj6s526sep4xw"]
+[gd_scene load_steps=21 format=3 uid="uid://bj6s526sep4xw"]
 
 [ext_resource type="Script" path="res://Scripts/file_manager.gd" id="1_x00ag"]
 [ext_resource type="Script" path="res://Scripts/settings.gd" id="2_7x3ll"]
@@ -34,6 +34,19 @@ shader_parameter/spill = 0.04
 [sub_resource type="Curve2D" id="Curve2D_stitx"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_wbxv0"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ldn2l"]
+bg_color = Color(2.11775e-06, 0.698233, 0.579628, 0.32549)
+draw_center = false
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0, 0.907134, 0.953642, 1)
+corner_radius_top_left = 1
+corner_radius_top_right = 1
+corner_radius_bottom_right = 1
+corner_radius_bottom_left = 1
 
 [node name="Editor" type="Node2D"]
 script = ExtResource("1_x00ag")
@@ -271,6 +284,15 @@ offset_bottom = 2.0
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
 offset = Vector2(100, 129.5)
 transform = Transform2D(1, 0, 0, 1, 100, 129.5)
+
+[node name="SelectedPanel" type="Panel" parent="."]
+unique_name_in_owner = true
+show_behind_parent = true
+offset_left = -239.0
+offset_top = 20.0
+offset_right = -116.0
+offset_bottom = 74.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_ldn2l")
 
 [connection signal="caret_changed" from="Code" to="Code" method="_on_caret_changed"]
 [connection signal="code_completion_requested" from="Code" to="Code" method="_on_code_completion_requested"]

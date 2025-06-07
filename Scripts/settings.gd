@@ -15,6 +15,7 @@ var file_modified = false;
 var _show = false;
 var active_overlay: Variant;
 var node_is_transitioning: bool;
+var is_return_by_enter: bool = false;
 
 func _ready() -> void:
 	grab_focus()
@@ -122,8 +123,9 @@ func toggle(node: Object, apply_background: bool = true, factor: float = (18 * 7
 
 	if _show:
 		%Cam.focus_die()
-		if !node is FileDialogType:
+		if !node is FileDialogType || !is_return_by_enter:
 			code.grab_focus()
+		if is_return_by_enter: is_return_by_enter = false
 		%Cam.else_scale = 1.0
 	else:
 		if node.name == "Info":
@@ -139,6 +141,7 @@ func toggle(node: Object, apply_background: bool = true, factor: float = (18 * 7
 		if node.name == "FileDialog":
 			future_pos.x += 100
 			future_pos.y += node.get_paragraph_offset(node.selected_index)
+			node.selected_panel.show_behind_parent = false
 
 		%Cam.focus_on(future_pos, node.zoom if ("zoom" in node) else Vector2(1,1))
 		code.release_focus()
@@ -185,6 +188,7 @@ func slide_from_left(node: Object, __show: bool, factor: float) -> Vector2:
 	return future_pos
 
 func _on_file_dialog_ui_close():
+	is_return_by_enter = true
 	toggle(%FileDialog)
 
 

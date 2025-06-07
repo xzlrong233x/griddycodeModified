@@ -3,6 +3,7 @@ class_name FileDialogType
 extends RichTextLabel
 
 @onready var editor: FileManager = $".."
+@onready var selected_panel: Panel = %SelectedPanel
 @onready var code = %Code
 
 var selected_index: int = 0
@@ -11,10 +12,12 @@ var dirs: Array[String]
 var bbcode_dirs: Array[String]
 var shortened_dirs: Array[String]
 var files: Array[String]
+var parsed_texts: PackedStringArray
 
 var query: String = ""
 var search_limit: int = 1000
 var current_dirs_count: int = 0
+var word_width = 0;
 var handled: bool
 var erased: bool
 var max_coincidence: Array = []
@@ -70,7 +73,7 @@ func setup() -> void:
 	active = false
 	change_dir(editor.current_dir)
 
-	update_ui()
+	flush_items()
 
 func _input(event: InputEvent) -> void:
 	if !active: return
@@ -118,22 +121,56 @@ func _input(event: InputEvent) -> void:
 
 	update_ui()
 
-func update_ui() -> void:
+func flush_items() -> void:
+	if len(dirs) >= 80 and !isHighestFakeDir:
+		print(dir.get_current_dir())
+		editor.warn(
+			"[color=yellow]WARNING[/color] the items of {} are more then 80, there will disabled the search render"
+			.format([dir.get_current_dir()],"{}")
+		)
 	clear()
 	show_items()
+	parsed_texts = get_parsed_text().split("\n")
+	move_selected_panel()
+
+func update_ui() -> void:
+	if len(dirs) < 80 and !isHighestFakeDir:
+		clear()
+		show_items()
+	move_selected_panel()
+	if active: %Cam.focus_on(Vector2(gp().x, global_position.y + get_paragraph_offset(selected_index)), zoom)
+	
+func move_selected_panel() -> void:
+	var off = Vector2(2,0)
+	var selected_txt = parsed_texts[selected_index]
+	var reg = RegEx.new()
+	reg.compile("g|j|q|y|p")
+	if (reg.search(selected_txt)):
+		off.y += 2
+	if (reg.search(query)):
+		off.y += 2
+	var siz = get_theme_font("normal_font").get_string_size(selected_txt) + off
+	var t = create_tween()
+	var to = Vector2(-357-1, global_position.y + get_paragraph_offset(selected_index)-1) #magic -357
+	var d = to.distance_to(selected_panel.position)
+	var tm = clamp(d/30,0.01,0.1)
+	t.parallel().tween_property(selected_panel,"position",to, tm)
+	t.parallel().tween_property(selected_panel,"size",siz, tm)
+	t.finished.connect(func():
+		selected_panel.show_behind_parent = not active
+	)
 
 func show_items() -> void:
 	for i in range(len(bbcode_dirs)):
 		show_item(i)
-	if active: %Cam.focus_on(Vector2(gp().x, global_position.y + get_paragraph_offset(selected_index)), zoom)
 
 func show_item(index: int) -> void:
 	var item = dirs[index]
 	var bbcode_item = bbcode_dirs[index]
-	if is_selected(item):
-		push_bgcolor(LuaSingleton.gui.selection_color)
-	else:
-		push_bgcolor(Color(0, 0, 0, 0))  # Reset background color if not selected
+	#if is_selected(item):
+	#	push_bgcolor(LuaSingleton.gui.selection_color)
+	#else:
+	push_bgcolor(Color(0, 0, 0, 0))  # Reset background color if not selected
 
 	var is_dir = dir.get_directories().find(item) != -1 or isHighestFakeDir
 
@@ -198,7 +235,7 @@ func handle_enter_key() -> void:
 		var old_dir = DirAccess.open(dir.get_current_dir())
 		dir.change_dir(item)
 		change_dir(item, old_dir.get_current_dir() == dir.get_current_dir())
-	update_ui()
+		flush_items()
 
 func make_bold(string: String, indexes: Array) -> String:
 	var new_string: String = ""
