@@ -87,7 +87,7 @@ func _ready():
 		warn("Welcome to [color=#c9daf8]Bussin[/color] [color=#85c6ff]GriddyCode[/color]! Please select a file, then press CTRL + I to get started! :D")
 
 func check_for_reserved() -> void:
-	var folders = ["langs", "themes"]
+	var folders = ["langs", "themes", "music"]
 
 	for folder in folders:
 		if !DirAccess.dir_exists_absolute(folder):

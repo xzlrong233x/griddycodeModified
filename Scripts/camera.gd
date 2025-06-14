@@ -36,7 +36,7 @@ func get_font_metrics() -> Vector2:
 const SCALE = 7.0;
 var _tween:Tween = null
 
-func create_static_tween():
+func create_static_tween(): #we should use it to avoid unclear tween
 	if _tween:
 		_tween.kill()
 	_tween = create_tween()
@@ -52,7 +52,7 @@ func _process(delta: float) -> void:
 
 	if busy: return;
 
-	var tween = create_tween();
+	var tween = create_static_tween();
 
 	var longest_line: String = code.get_longest_line();
 	var chars: int = longest_line.length();
@@ -73,21 +73,21 @@ func _process(delta: float) -> void:
 
 func focus_on(pos: Vector2, _zoom: Vector2) -> void:
 	busy = true;
-	var tween = create_tween()
+	var tween = create_static_tween()
 
-	tween.parallel().tween_property(self, "global_position", pos, transition_speed)
+	tween.parallel().tween_property(self, "global_position", pos, 1.2 / _zoom.length())
 	tween.parallel().tween_property(self, "zoom", _zoom, transition_speed)
 
 func focus_die() -> void:
 	busy = false
-	var tween = create_tween()
+	var tween = create_static_tween()
 
 	tween.parallel().tween_property(self, "global_position", code.get_caret_draw_pos(), transition_speed)
 
 func focus_temp(intensity: float) -> void:
 	if busy: return
 
-	var tween = create_tween()
+	var tween = create_static_tween()
 
 	tween.parallel().tween_property(self, "zoom", zoom + Vector2(intensity, intensity), 0.5)
 

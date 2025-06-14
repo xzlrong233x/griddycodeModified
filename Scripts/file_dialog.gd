@@ -13,6 +13,7 @@ var bbcode_dirs: Array[String]
 var shortened_dirs: Array[String]
 var files: Array[String]
 var parsed_texts: PackedStringArray
+var searched_inds: PackedInt32Array
 
 var query: String = ""
 var search_limit: int = 1000
@@ -33,6 +34,7 @@ signal ui_close
 
 func change_dir(path, no_change: bool=false) -> void:
 	query = ""
+	searched_inds = []
 	if !dir: dir = DirAccess.open(path)
 	#dir.include_hidden = true
 	# WARNING: this will heavily affect performance if de-commented
@@ -108,6 +110,7 @@ func _input(event: InputEvent) -> void:
 			query += key_event.as_text().to_lower()
 		elif key_event.keycode == KEY_PERIOD:
 			query += "."
+		searched_inds = []
 
 	max_coincidence = []
 
@@ -115,6 +118,8 @@ func _input(event: InputEvent) -> void:
 		for i in range(1, len(dirs)):
 			coincidence = fuzzy_search(shortened_dirs[i].to_lower(), query)
 			bbcode_dirs[i] = make_bold(shortened_dirs[i], coincidence)
+			if (len(coincidence) > 0):
+				searched_inds.append(i)
 			if is_closer(max_coincidence, coincidence):
 				max_coincidence = coincidence
 				if not handled:	selected_index = i
@@ -123,7 +128,6 @@ func _input(event: InputEvent) -> void:
 
 func flush_items() -> void:
 	if len(dirs) >= 80 and !isHighestFakeDir:
-		print(dir.get_current_dir())
 		editor.warn(
 			"[color=yellow]WARNING[/color] the items of {} are more then 80, there will disabled the search render"
 			.format([dir.get_current_dir()],"{}")
@@ -143,11 +147,13 @@ func update_ui() -> void:
 func move_selected_panel() -> void:
 	var off = Vector2(2,0)
 	var selected_txt = parsed_texts[selected_index]
+	if len(selected_txt) > 47: 
+		selected_txt = selected_txt.substr(0,47)
 	var reg = RegEx.new()
 	reg.compile("g|j|q|y|p")
 	if (reg.search(selected_txt)):
 		off.y += 2
-	if (reg.search(query)):
+	if (reg.search(query) && len(dirs) < 80):
 		off.y += 2
 	var siz = get_theme_font("normal_font").get_string_size(selected_txt) + off
 	var t = create_tween()
@@ -159,7 +165,12 @@ func move_selected_panel() -> void:
 	t.finished.connect(func():
 		selected_panel.show_behind_parent = not active
 	)
-
+	var n = selected_panel.get_theme_stylebox("panel") as StyleBoxFlat
+	if (selected_index in searched_inds):
+		n.border_color = Color.YELLOW
+	else:
+		n.border_color = Color.hex(0x00e7f3ff)
+	
 func show_items() -> void:
 	for i in range(len(bbcode_dirs)):
 		show_item(i)
